@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugün Hangi Yayıncıyı İzleyelim?</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tailwind CSS'e ek olarak özel animasyonlar */
+        @keyframes blob {
+          0% {
+            transform: translate(0px, 0px) scale(1);
+          }
+          33% {
+            transform: translate(30px, -50px) scale(1.1);
+          }
+          66% {
+            transform: translate(-20px, 20px) scale(0.9);
+          }
+          100% {
+            transform: translate(0px, 0px) scale(1);
+          }
+        }
+        .animate-blob {
+          animation: blob 7s infinite;
+        }
+        .animation-delay-2000 {
+          animation-delay: 2s;
+        }
+        .animation-delay-4000 {
+          animation-delay: 4s;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="font-sans">
+    <div class="min-h-screen relative overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4 text-gray-800">
+        <!-- Arka plan efektleri - Soyut yayın akışı benzeri şekiller -->
+        <div class="absolute inset-0 z-0 opacity-20">
+            <div class="absolute top-1/4 left-1/4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob opacity-70"></div>
+            <div class="absolute top-1/2 right-1/4 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000 opacity-70"></div>
+            <div class="absolute bottom-1/4 left-1/3 w-72 h-72 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000 opacity-70"></div>
+        </div>
+
+        <div class="relative z-10 bg-white bg-opacity-90 backdrop-filter backdrop-blur-lg rounded-3xl shadow-2xl p-8 max-w-md w-full text-center transform hover:scale-105 transition-transform duration-300 ease-in-out border border-indigo-400">
+            <h1 class="text-4xl font-extrabold mb-6 tracking-tight">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-purple-700">
+                    Bugün Hangi Yayıncıyı İzleyelim?
+                </span>
+            </h1>
+
+            <div id="loading-indicator" class="flex flex-col items-center mb-4 hidden">
+                <svg class="animate-spin h-6 w-6 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="text-gray-600 text-sm">Veriler yükleniyor...</p>
+            </div>
+
+            <p id="user-id-display" class="text-xs text-gray-400 mb-2 break-all hidden"></p>
+
+            <div id="main-content-area" class="min-h-[150px] flex flex-col items-center justify-center mb-8">
+                <p id="error-message" class="text-red-600 text-lg font-medium mb-4 hidden"></p>
+                <div id="spinning-indicator" class="flex flex-col items-center hidden">
+                    <svg class="animate-spin h-12 w-12 text-purple-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-xl font-semibold text-gray-600">Seçiliyor...</p>
+                </div>
+                <div id="selected-streamer-display" class="flex flex-col items-center hidden">
+                    <p id="streamer-name" class="text-3xl font-bold text-indigo-700 mb-4 animate-fade-in"></p>
+                    <a id="streamer-channel-link" href="#" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 text-lg font-medium underline transition-colors duration-200">Kanalına Git</a>
+                </div>
+                <p id="initial-message" class="text-xl text-gray-600 font-medium">Aşağıdaki düğmeye tıklayarak bir yayıncı seçin.</p>
+            </div>
+
+            <button id="pick-streamer-button" class="w-full px-8 py-4 rounded-full text-xl font-bold mb-4 bg-gradient-to-r from-teal-500 to-blue-600 text-white shadow-lg transform transition-all duration-300 ease-in-out hover:from-teal-600 hover:to-blue-700 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                Yayıncı Seç!
+            </button>
+
+            <button id="show-add-streamer-form-button" class="w-full px-6 py-3 rounded-full text-md font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors duration-200 shadow-md">
+                Yeni Yayıncı Ekle
+            </button>
+
+            <div id="add-streamer-form" class="mt-6 p-4 bg-gray-100 rounded-lg shadow-inner hidden">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">Yeni Yayıncı Ekle</h3>
+                <input type="text" id="new-streamer-name-input" placeholder="Yayıncı Adı" class="w-full p-3 mb-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <input type="text" id="new-streamer-channel-input" placeholder="Kanal URL (örn: https://kick.com/kanaladi)" class="w-full p-3 mb-4 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                <div class="flex justify-between space-x-2">
+                    <button id="add-streamer-button" class="flex-1 px-4 py-2 rounded-full text-white font-semibold bg-blue-500 hover:bg-blue-600 transition-colors duration-200 shadow">
+                        Ekle
+                    </button>
+                    <button id="cancel-add-streamer-button" class="flex-1 px-4 py-2 rounded-full text-gray-700 font-semibold bg-red-300 hover:bg-red-400 transition-colors duration-200 shadow">
+                        İptal
+                    </button>
+                </div>
+            </div>
+
+            <p class="mt-6 text-sm text-gray-500">
+                Not: Yayıncılar artık kaydedilir ve sayfa yenilense bile kaybolmaz.
+            </p>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+        // Firebase yapılandırması
+        const firebaseConfig = {
+  apiKey: "AIzaSyBOdw9C3Wzy1M9Zjx7NEQug64KgrGLrFxQ",
+  authDomain: "yayincitavsiye.firebaseapp.com",
+  projectId: "yayincitavsiye",
+  storageBucket: "yayincitavsiye.firebasestorage.app",
+  messagingSenderId: "565749557536",
+  appId: "1:565749557536:web:1ff0bbdf58eead191a8f45",
+  measurementId: "G-3NSS5XTD5Y"
+};
+
+
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+        let streamerList = [];
+        let firebaseLoading = true;
+
+        // DOM elementlerini al
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const errorMessageDisplay = document.getElementById('error-message');
+        const spinningIndicator = document.getElementById('spinning-indicator');
+        const selectedStreamerDisplay = document.getElementById('selected-streamer-display');
+        const streamerNameDisplay = document.getElementById('streamer-name');
+        const streamerChannelLink = document.getElementById('streamer-channel-link');
+        const initialMessage = document.getElementById('initial-message');
+        const pickStreamerButton = document.getElementById('pick-streamer-button');
+        const showAddStreamerFormButton = document.getElementById('show-add-streamer-form-button');
+        const addStreamerForm = document.getElementById('add-streamer-form');
+        const newStreamerNameInput = document.getElementById('new-streamer-name-input');
+        const newStreamerChannelInput = document.getElementById('new-streamer-channel-input');
+        const addStreamerButton = document.getElementById('add-streamer-button');
+        const cancelAddStreamerButton = document.getElementById('cancel-add-streamer-button');
+
+        // UI state'ini güncelleme fonksiyonları
+        function setLoading(isLoading) {
+            firebaseLoading = isLoading;
+            if (isLoading) {
+                loadingIndicator.classList.remove('hidden');
+                pickStreamerButton.disabled = true;
+                showAddStreamerFormButton.disabled = true;
+                addStreamerButton.disabled = true;
+                newStreamerNameInput.disabled = true;
+                newStreamerChannelInput.disabled = true;
+            } else {
+                loadingIndicator.classList.add('hidden');
+                pickStreamerButton.disabled = false;
+                showAddStreamerFormButton.disabled = false;
+                addStreamerButton.disabled = false;
+                newStreamerNameInput.disabled = false;
+                newStreamerChannelInput.disabled = false;
+            }
+        }
+
+        function setErrorMessage(message) {
+            errorMessageDisplay.textContent = message;
+            if (message) {
+                errorMessageDisplay.classList.remove('hidden');
+            } else {
+                errorMessageDisplay.classList.add('hidden');
+            }
+        }
+
+        function setSpinning(isSpinning) {
+            if (isSpinning) {
+                spinningIndicator.classList.remove('hidden');
+                selectedStreamerDisplay.classList.add('hidden');
+                initialMessage.classList.add('hidden');
+                pickStreamerButton.disabled = true;
+            } else {
+                spinningIndicator.classList.add('hidden');
+                pickStreamerButton.disabled = false;
+                if (!selectedStreamerDisplay.classList.contains('hidden')) {
+                    initialMessage.classList.add('hidden');
+                } else if (!initialMessage.classList.contains('hidden')) {
+                    selectedStreamerDisplay.classList.add('hidden');
+                }
+            }
+        }
+
+        function displaySelectedStreamer(streamer) {
+            if (streamer) {
+                streamerNameDisplay.textContent = streamer.name;
+                streamerChannelLink.href = streamer.channel;
+                selectedStreamerDisplay.classList.remove('hidden');
+                initialMessage.classList.add('hidden');
+            } else {
+                selectedStreamerDisplay.classList.add('hidden');
+                initialMessage.classList.remove('hidden');
+            }
+        }
+
+        function toggleAddStreamerForm(show) {
+            if (show) {
+                addStreamerForm.classList.remove('hidden');
+                showAddStreamerFormButton.classList.add('hidden');
+            } else {
+                addStreamerForm.classList.add('hidden');
+                showAddStreamerFormButton.classList.remove('hidden');
+                newStreamerNameInput.value = '';
+                newStreamerChannelInput.value = '';
+                setErrorMessage('');
+            }
+        }
+
+        // Firebase başlatma ve kimlik doğrulama
+        window.onload = function() {
+            setLoading(true);
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        userIdDisplay.textContent = `Kullanıcı Kimliği: ${userId}`;
+                        userIdDisplay.classList.remove('hidden');
+                        setLoading(false);
+                        initializeDataListeners();
+                    } else {
+                        try {
+                            const anonymousUser = await signInAnonymously(auth);
+                            userId = anonymousUser.user.uid;
+                            isAuthReady = true;
+                            userIdDisplay.textContent = `Kullanıcı Kimliği: ${userId}`;
+                            userIdDisplay.classList.remove('hidden');
+                            setLoading(false);
+                            initializeDataListeners();
+                        } catch (anonError) {
+                            console.error("Anonim oturum açma hatası:", anonError);
+                            setErrorMessage(`Anonim oturum açılırken hata oluştu: ${anonError.message || 'Bilinmeyen Hata'}. Firebase API Anahtarınızın ve Kimlik Doğrulama ayarlarınızın doğru olduğundan emin olun.`);
+                            setLoading(false);
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Firebase başlatma hatası:", err);
+                setErrorMessage('Firebase başlatılırken bir sorun oluştu. Lütfen tekrar deneyin.');
+                setLoading(false);
+            }
+        };
+
+        // Firestore veri dinleyicileri
+        function initializeDataListeners() {
+            if (db && userId && isAuthReady) {
+                setLoading(true);
+                const streamersCollectionRef = collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/streamers`);
+                
+                // İlk yüklendiğinde varsayılan büyük yayıncıları ekle (sadece bir kez)
+                const addInitialStreamers = async () => {
+                    const existingDocs = await getDocs(streamersCollectionRef); 
+                    if (existingDocs.empty) {
+                        const initialStreamers = [
+                            { name: 'Ninja', channel: 'https://kick.com/ninja' },
+                            { name: 'xQc', channel: 'https://kick.com/xqcow' },
+                            { name: 'Aydan', channel: 'https://kick.com/aydan' },
+                            { name: 'Trainwreckstv', channel: 'https://kick.com/trainwreckstv' },
+                            { name: 'Amouranth', channel: 'https://kick.com/amouranth' },
+                            { name: 'AdinRoss', channel: 'https://kick.com/adinross' },
+                            { name: 'Mizkif', channel: 'https://kick.com/mizkif' },
+                            { name: 'Kai Cenat', channel: 'https://kick.com/kaicenat' },
+                            { name: 'Pokimane', channel: 'https://kick.com/pokimane' },
+                            { name: 'Sykkuno', channel: 'https://kick.com/sykkuno' },
+                            { name: 'Jahrein', channel: 'https://kick.com/jahrein' },
+                            { name: 'Elraenn', channel: 'https://kick.com/elraenn' },
+                            { name: 'wtcN', channel: 'https://kick.com/wtcn' },
+                            { name: 'Pqueen', channel: 'https://kick.com/pqueen' },
+                            { name: 'kendinemuzisyen', channel: 'https://kick.com/kendinemuzisyen' },
+                            { name: 'HasanAbi', channel: 'https://kick.com/hasanabi' },
+                            { name: 'Mithrain', channel: 'https://kick.com/mithrain' },
+                            { name: 'Riot Games TR', channel: 'https://kick.com/riotgamestr' },
+                            { name: 'Burak Oyunda', channel: 'https://kick.com/burakoyunda' },
+                            { name: 'Unlost', channel: 'https://kick.com/unlost' },
+                            { name: 'Shroud', channel: 'https://kick.com/shroud' },
+                            { name: 'Nickmercs', channel: 'https://kick.com/nickmercs' },
+                            { name: 'DrDisrespect', channel: 'https://kick.com/drdisrespect' },
+                            { name: 'TimTheTatman', channel: 'https://kick.com/timthetatman' },
+                            { name: 'Summit1g', channel: 'https://kick.com/summit1g' },
+                            { name: 'Moistcr1tikal', channel: 'https://kick.com/moistcr1tikal' },
+                            { name: 'Forsen', channel: 'https://kick.com/forsen' },
+                            { name: 'Asmongold', channel: 'https://kick.com/asmongold' },
+                            { name: 'Trainwreckstv', channel: 'https://kick.com/trainwreckstv' },
+                            { name: 'Gorgc', channel: 'https://kick.com/gorgc' },
+                            { name: 'AdmiralBulldog', channel: 'https://kick.com/admiralbulldog' },
+                            { name: 'Tarik', channel: 'https://kick.com/tarik' },
+                            { name: 'Lirik', channel: 'https://kick.com/lirik' },
+                            { name: 'Sodapoppin', channel: 'https://kick.com/sodapoppin' },
+                            { name: 'Syndicate', channel: 'https://kick.com/syndicate' },
+                            { name: 'TheGrefg', channel: 'https://kick.com/thegrefg' },
+                            { name: 'Rubius', channel: 'https://kick.com/rubius' },
+                            { name: 'AuronPlay', channel: 'https://kick.com/auronplay' },
+                            { name: 'Ibai', channel: 'https://kick.com/ibai' },
+                            { name: 'xQcOW', channel: 'https://kick.com/xqc' },
+                            { name: 'Loud_Coringa', channel: 'https://kick.com/loud_coringa' },
+                            { name: 'Gaules', channel: 'https://kick.com/gaules' },
+                            { name: 'Fallen', channel: 'https://kick.com/fallen' },
+                            { name: 'Alanzoka', channel: 'https://kick.com/alanzoka' },
+                            { name: 'Squeex', channel: 'https://kick.com/squeex' },
+                            { name: 'OTKNetwork', channel: 'https://kick.com/otknetwork' },
+                            { name: 'Simply', channel: 'https://kick.com/simply' },
+                            { name: 'Tectone', channel: 'https://kick.com/tectone' },
+                            { name: 'EsfandTV', channel: 'https://kick.com/esfandtv' },
+                            { name: 'Myth', channel: 'https://kick.com/myth' },
+                            { name: 'PENTA', channel: 'https://kick.com/penta' },
+                            { name: 'Burn', channel: 'https://kick.com/burn' },
+                            { name: 'RatedEpicz', channel: 'https://kick.com/ratedepicz' },
+                            { name: 'Ramee', channel: 'https://kick.com/ramee' },
+                            { name: 'ChangGang', channel: 'https://kick.com/changgangleader' },
+                            { name: 'Valkyrae', channel: 'https://kick.com/valkyrae' },
+                            { name: 'Toast', channel: 'https://kick.com/disguisedtoast' },
+                            { name: 'LilyPichu', channel: 'https://kick.com/lilypichu' },
+                            { name: 'Fuslie', channel: 'https://kick.com/fuslie' },
+                            { name: 'Yvonnie', channel: 'https://kick.com/yvonnie' },
+                            { name: 'Ludwig', channel: 'https://kick.com/ludwig' },
+                            { name: 'QTcinderella', channel: 'https://kick.com/qtcinderella' },
+                            { name: 'Pokelawls', channel: 'https://kick.com/pokelawls' },
+                            { name: 'xqcL', channel: 'https://kick.com/xqcl' },
+                            { name: 'syracuse', channel: 'https://kick.com/syracuse' },
+                            { name: 'moose', channel: 'https://kick.com/moose' },
+                            { name: 'clix', channel: 'https://kick.com/clix' },
+                            { name: 'bugha', channel: 'https://kick.com/bugha' },
+                            { name: 'mongraal', channel: 'https://kick.com/mongraal' },
+                            { name: 'Tfue', channel: 'https://kick.com/tfue' },
+                            { name: 'NinjaPlays', channel: 'https://kick.com/ninjaplays' },
+                            { name: 'Poki', channel: 'https://kick.com/poki' },
+                            { name: 'SykkunoLive', channel: 'https://kick.com/sykkunolive' },
+                            { name: 'Squeex_TV', channel: 'https://kick.com/squeextv' },
+                            { name: 'Hasang_Piker', channel: 'https://kick.com/hasan_piker' },
+                            { name: 'Elraenn_Kick', channel: 'https://kick.com/elraenn_kick' },
+                            { name: 'Wtcn_Live', channel: 'https://kick.com/wtcn_live' },
+                            { name: 'Pqueen_Official', channel: 'https://kick.com/pqueen_official' },
+                            { name: 'KendineMuzisyen_Official', channel: 'https://kick.com/kendinemuzisyen_official' },
+                            { name: 'Mithrain_Official', channel: 'https://kick.com/mithrain_official' },
+                            { name: 'Burak_Oyunda', channel: 'https://kick.com/burak_oyunda' },
+                            { name: 'UnlostV', channel: 'https://kick.com/unlostv' },
+                        ];
+                        for (const streamer of initialStreamers) {
+                            await addDoc(streamersCollectionRef, {
+                                name: streamer.name,
+                                channel: streamer.channel,
+                                createdAt: Date.now()
+                            });
+                        }
+                    }
+                };
+                addInitialStreamers();
+
+
+                onSnapshot(streamersCollectionRef, (snapshot) => {
+                    const streamersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    streamersData.sort((a, b) => a.name.localeCompare(b.name));
+                    streamerList = streamersData; // Global değişkeni güncelle
+                    setLoading(false);
+                    // Düğme durumlarını güncelleyin
+                    updateButtonStates();
+                    // Eğer listede yayıncı varsa ve henüz bir yayıncı seçilmediyse veya önceki yayıncı artık listede yoksa, varsayılan mesajı göster.
+                    if (streamerList.length > 0 && (!selectedStreamerDisplay.classList.contains('hidden') && !streamerList.some(s => s.id === (selectedStreamerDisplay.dataset.id)))) {
+                         displaySelectedStreamer(null); // Seçili yayıncıyı temizle
+                         initialMessage.classList.remove('hidden'); // Başlangıç mesajını göster
+                    } else if (streamerList.length === 0) {
+                        displaySelectedStreamer(null);
+                        initialMessage.textContent = 'Listede yayıncı bulunmuyor! Lütfen önce bir yayıncı ekleyin.';
+                        initialMessage.classList.remove('hidden');
+                    }
+                }, (error) => {
+                    console.error("Yayıncıları çekerken hata oluştu:", error);
+                    setErrorMessage('Yayıncı listesi yüklenirken bir hata oluştu.');
+                    setLoading(false);
+                });
+            }
+        }
+
+        function updateButtonStates() {
+            pickStreamerButton.disabled = firebaseLoading || streamerList.length === 0;
+            showAddStreamerFormButton.disabled = firebaseLoading;
+            addStreamerButton.disabled = firebaseLoading;
+            cancelAddStreamerButton.disabled = firebaseLoading;
+            newStreamerNameInput.disabled = firebaseLoading;
+            newStreamerChannelInput.disabled = firebaseLoading;
+
+            if (streamerList.length === 0 && !firebaseLoading) {
+                initialMessage.textContent = 'Listede yayıncı bulunmuyor! Lütfen önce bir yayıncı ekleyin.';
+                initialMessage.classList.remove('hidden');
+            } else if (streamerList.length > 0 && initialMessage.textContent === 'Listede yayıncı bulunmuyor! Lütfen önce bir yayıncı ekleyin.') {
+                 initialMessage.textContent = 'Aşağıdaki düğmeye tıklayarak bir yayıncı seçin.';
+            }
+        }
+
+
+        // Rastgele bir yayıncı seçme fonksiyonu
+        pickStreamerButton.addEventListener('click', () => {
+            if (streamerList.length === 0) {
+                setErrorMessage('Listede yayıncı bulunmuyor! Lütfen önce bir yayıncı ekleyin.');
+                displaySelectedStreamer(null); // Seçimi temizle
+                return;
+            }
+            setErrorMessage('');
+            setSpinning(true);
+
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * streamerList.length);
+                const selected = streamerList[randomIndex];
+                displaySelectedStreamer(selected);
+                setSpinning(false);
+            }, 1500);
+        });
+
+        // Yeni yayıncı ekleme formunu gösterme/gizleme
+        showAddStreamerFormButton.addEventListener('click', () => {
+            toggleAddStreamerForm(true);
+            setErrorMessage('');
+        });
+
+        cancelAddStreamerButton.addEventListener('click', () => {
+            toggleAddStreamerForm(false);
+        });
+
+        // Yeni yayıncı ekleme fonksiyonu
+        addStreamerButton.addEventListener('click', async () => {
+            setErrorMessage('');
+            const name = newStreamerNameInput.value.trim();
+            const channel = newStreamerChannelInput.value.trim();
+
+            if (!name || !channel) {
+                setErrorMessage('Yayıncı adı ve kanal URL\'si boş olamaz.');
+                return;
+            }
+            if (!channel.startsWith('https://kick.com/')) {
+                setErrorMessage('Kanal URL\'si "https://kick.com/" ile başlamalıdır.');
+                return;
+            }
+
+            if (db && userId) {
+                try {
+                    setLoading(true);
+                    await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${userId}/streamers`), {
+                        name: name,
+                        channel: channel,
+                        createdAt: Date.now()
+                    });
+                    toggleAddStreamerForm(false);
+                    setLoading(false);
+                } catch (e) {
+                    console.error("Yayıncı eklenirken hata oluştu: ", e);
+                    setErrorMessage('Yayıncı eklenirken bir sorun oluştu.');
+                    setLoading(false);
+                }
+            } else {
+                setErrorMessage('Veritabanı bağlantısı hazır değil. Lütfen bekleyin.');
+            }
+        });
+    </script>
+</body>
+</html>
